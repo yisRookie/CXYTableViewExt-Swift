@@ -114,17 +114,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		7B5F4FD52EAA048F006FA609 /* CXYCollectionViewExt */ = {
-			isa = PBXGroup;
-			children = (
-				7B86C7FC2E8B84AC0010207D /* CXYCollectionItemProtocol.swift */,
-				7B86C7FA2E8B84AC0010207D /* CXYCollectionDataItem.swift */,
-				7B86C7FB2E8B84AC0010207D /* CXYCollectionDataSource.swift */,
-				7B86C7FD2E8B84AC0010207D /* CXYCollectionViewExt.swift */,
-			);
-			path = CXYCollectionViewExt;
-			sourceTree = "<group>";
-		};
 		80469A1428A1F27C00245325 /* Model */ = {
 			isa = PBXGroup;
 			children = (
@@ -183,7 +172,6 @@
 			isa = PBXGroup;
 			children = (
 				80D2D71D28A10AAE00DF78BA /* Example */,
-				7B5F4FD52EAA048F006FA609 /* CXYCollectionViewExt */,
 				80D2D71028A1040100DF78BA /* CXYTableViewExt */,
 				80D2D6FC28A103E000DF78BA /* AppDelegate.swift */,
 				807992F928A111B1009D3CC1 /* SceneDelegate.swift */,
@@ -198,6 +186,10 @@
 		80D2D71028A1040100DF78BA /* CXYTableViewExt */ = {
 			isa = PBXGroup;
 			children = (
+				7B86C7FA2E8B84AC0010207D /* CXYCollectionDataItem.swift */,
+				7B86C7FB2E8B84AC0010207D /* CXYCollectionDataSource.swift */,
+				7B86C7FC2E8B84AC0010207D /* CXYCollectionItemProtocol.swift */,
+				7B86C7FD2E8B84AC0010207D /* CXYCollectionViewExt.swift */,
 				80D2D71128A1053200DF78BA /* CXYTableItemProtocol.swift */,
 				80D2D71328A1055300DF78BA /* CXYTableViewExt.swift */,
 				80D2D71528A1057F00DF78BA /* CXYTableSectionItem.swift */,

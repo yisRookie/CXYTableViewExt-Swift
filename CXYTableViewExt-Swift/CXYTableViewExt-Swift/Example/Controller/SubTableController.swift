@@ -10,6 +10,7 @@ import UIKit
 class SubTableController: BaseTableController {
 
     var list = Array(1...30)
+
     override func viewDidLoad() {
         super.viewDidLoad()
         self.title = "SubTable"
@@ -24,6 +25,11 @@ class SubTableController: BaseTableController {
     func configTable1() {
         self.tableView.t.makeConfig { make in
             make.addCellItems(cellClass: TextCell.self, dataList: self.list)
+
+        }
+        
+        self.tableView.t.didSelectItem { tableView, indexPath in
+            print("___________")
         }
     }
     

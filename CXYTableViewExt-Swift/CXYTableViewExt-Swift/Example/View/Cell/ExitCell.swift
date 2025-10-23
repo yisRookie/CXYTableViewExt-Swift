@@ -6,12 +6,14 @@
 //
 
 import UIKit
+import SnapKit
 
 class ExitCell: UITableViewCell {
 
     var title: UILabel = {
-        let title = UILabel(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.size.width, height: 50))
+        let title = UILabel()
         title.textAlignment = .center
+        title.numberOfLines = 0
         title.textColor = .systemRed
         return title
     }()
@@ -19,6 +21,10 @@ class ExitCell: UITableViewCell {
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         self.contentView.addSubview(self.title)
+        title.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+//            make.height.equalTo(50)
+        }
     }
     
     required init?(coder: NSCoder) {
@@ -28,7 +34,7 @@ class ExitCell: UITableViewCell {
 
 extension ExitCell: CXYTableItemProtocol {
     static func heightForItem(data: Any?) -> CGFloat {
-        return 50
+        return UITableView.automaticDimension
     }
     
     func configItem(data: Any?) {

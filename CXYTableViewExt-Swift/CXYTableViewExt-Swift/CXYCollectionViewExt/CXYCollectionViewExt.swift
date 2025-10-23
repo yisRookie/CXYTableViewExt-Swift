@@ -1,49 +1,12 @@
-//
-//  CXYTableViewExt.swift
-//  CXYTableViewExt-Swift
-//
-//  Created by cxy on 2022/8/8.
-//
-
+//  CXYCollectionViewExt.swift
 import Foundation
 import UIKit
 
+extension UICollectionView: CXYTableNamespaceWrappable { }
 
-public struct CXYTableNamespaceWrapper<T> {
-    internal let table: T
-    public init(_ table: T) {
-        self.table = table
-    }
-}
-
-public protocol CXYTableNamespaceWrappable {
-    associatedtype WrapperType
-    var t: WrapperType { get }
-}
-
-public protocol CXYCollectionNamespaceWrappable {
-    associatedtype CollectionWrapperType
-    var c: CollectionWrapperType { get }
-}
-
-public extension CXYTableNamespaceWrappable {
-    var t: CXYTableNamespaceWrapper<Self> {
-        return CXYTableNamespaceWrapper(self)
-    }
-}
-
-public extension CXYCollectionNamespaceWrappable {
-    var c: CXYTableNamespaceWrapper<Self> {
-        return CXYTableNamespaceWrapper(self)
-    }
-}
-
-extension UITableView: CXYTableNamespaceWrappable { }
-extension UICollectionView: CXYCollectionNamespaceWrappable { }
-
-extension CXYTableNamespaceWrapper where T: UITableView {
+extension CXYTableNamespaceWrapper where T: UICollectionView {
     
-    public func configDataSource(_ dataSource: CXYTableDataSource) {
+    public func configDataSource(_ dataSource: CXYCollectionDataSource) {
         table.defaultDataSource = dataSource
         table.dataSource = dataSource
         table.delegate = dataSource
@@ -51,16 +14,16 @@ extension CXYTableNamespaceWrapper where T: UITableView {
     
     public func makeConfig(_ closure: @escaping (_ make: Self) -> Void) {
         removeItems()
-        closure(table.t)
+        closure(table.c)
         table.reloadData()
     }
     
     public func useDefaultDataSource() {
-        configDataSource(CXYTableDataSource())
+        configDataSource(CXYCollectionDataSource())
     }
 }
 
-extension CXYTableNamespaceWrapper where T: UITableView {
+extension CXYTableNamespaceWrapper where T: UICollectionView {
     
     func register(itemClasses clss: Array<AnyClass>) {
         for cls in clss {
@@ -70,20 +33,26 @@ extension CXYTableNamespaceWrapper where T: UITableView {
     
     func register(itemClass cls: AnyClass) {
         let name = String(describing: cls)
-        let path = Bundle.main.path(forResource: name, ofType: "nib")
+        // Prefer nibs from the class's bundle; fall back to main bundle
+        let classBundle = Bundle(for: cls)
+        let mainNibPath = Bundle.main.path(forResource: name, ofType: "nib")
+        let classNibPath = classBundle.path(forResource: name, ofType: "nib")
+        let nibBundle: Bundle? = (mainNibPath != nil) ? Bundle.main : ((classNibPath != nil) ? classBundle : nil)
 
-        if cls is UITableViewCell.Type {
-            if let _ = path {
-                table.register(UINib(nibName: name, bundle: nil) , forCellReuseIdentifier: name)
+        if cls is UICollectionViewCell.Type {
+            if let bundle = nibBundle {
+                table.register(UINib(nibName: name, bundle: bundle), forCellWithReuseIdentifier: name)
             } else {
-                table.register(cls, forCellReuseIdentifier: name)
+                table.register(cls, forCellWithReuseIdentifier: name)
             }
             
-        } else if cls is UITableViewHeaderFooterView.Type {
-            if let _ = path {
-                table.register(UINib(nibName: name, bundle: nil), forHeaderFooterViewReuseIdentifier: name)
+        } else if cls is UICollectionReusableView.Type {
+            if let bundle = nibBundle {
+                table.register(UINib(nibName: name, bundle: bundle), forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: name)
+                table.register(UINib(nibName: name, bundle: bundle), forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: name)
             } else {
-                table.register(cls, forHeaderFooterViewReuseIdentifier: name)
+                table.register(cls, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: name)
+                table.register(cls, forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: name)
             }
         } else {
             fatalError("\(name) is an illegal class!")
@@ -92,20 +61,20 @@ extension CXYTableNamespaceWrapper where T: UITableView {
 }
 
 /**
- *  后添加item
+ *  添加item
  */
-public extension CXYTableNamespaceWrapper where T: UITableView {
+public extension CXYTableNamespaceWrapper where T: UICollectionView {
    
     func addHeaderItem(headerClass cls: AnyClass, data: Any?, delegate: AnyObject? = nil) {
         registerIfNeed(itemClass: cls)
         useDefaultDataSourceIfNeed()
 
-        let headerItem = CXYTableDataItem(itemClass: cls, data: data, delegate: delegate)
+        let headerItem = CXYCollectionDataItem(itemClass: cls, data: data, delegate: delegate)
      
         if let sec = table.m.sections.last, isEmpty(sectionItem: sec) {
             sec.headerItem = headerItem
         } else {
-            let sectionItem = CXYTableSectionItem()
+            let sectionItem = CXYCollectionSectionItem()
             sectionItem.headerItem = headerItem
             table.m.sections.append(sectionItem)
         }
@@ -119,29 +88,29 @@ public extension CXYTableNamespaceWrapper where T: UITableView {
         addCellItem(cellClass: cls, data: nil, delegate: delegate, closure: nil)
     }
     
-    func addCellItem(cellClass cls: AnyClass, closure: CXYItemClosure?) {
+    func addCellItem(cellClass cls: AnyClass, closure: CXYCollectionItemClosure?) {
         addCellItem(cellClass: cls, data: nil, delegate: nil, closure: closure)
     }
     
-    func addCellItem(cellClass cls: AnyClass, data: Any?, closure: CXYItemClosure?) {
+    func addCellItem(cellClass cls: AnyClass, data: Any?, closure: CXYCollectionItemClosure?) {
         addCellItem(cellClass: cls, data: data, delegate: nil, closure: closure)
     }
     
-    func addCellItem(cellClass cls: AnyClass, data: Any?, delegate: AnyObject?, closure:CXYItemClosure? = nil) {
+    func addCellItem(cellClass cls: AnyClass, data: Any?, delegate: AnyObject?, closure: CXYCollectionItemClosure? = nil) {
         registerIfNeed(itemClass: cls)
         useDefaultDataSourceIfNeed()
         
         if let sec = table.m.sections.last {
             if let _ = sec.footerItem {
-                table.m.sections.append(CXYTableSectionItem())
+                table.m.sections.append(CXYCollectionSectionItem())
             }
         } else {
-            table.m.sections.append(CXYTableSectionItem())
+            table.m.sections.append(CXYCollectionSectionItem())
         }
         
         let sectionItem = table.m.sections.last;
         
-        let cellItem = CXYTableDataItem(itemClass: cls, data: data, delegate: delegate, closure: closure)
+        let cellItem = CXYCollectionDataItem(itemClass: cls, data: data, delegate: delegate, closure: closure)
         sectionItem?.cellItems.append(cellItem)
     }
     
@@ -154,15 +123,15 @@ public extension CXYTableNamespaceWrapper where T: UITableView {
         useDefaultDataSourceIfNeed()
         
         let items = dataList.map {
-            CXYTableDataItem(itemClass: cls, data: $0, delegate: delegate)
+            CXYCollectionDataItem(itemClass: cls, data: $0, delegate: delegate)
         }
         
         if let sec = table.m.sections.last {
             if let _ = sec.footerItem {
-                table.m.sections.append(CXYTableSectionItem())
+                table.m.sections.append(CXYCollectionSectionItem())
             }
         } else {
-            table.m.sections.append(CXYTableSectionItem())
+            table.m.sections.append(CXYCollectionSectionItem())
         }
         
         let sectionItem = table.m.sections.last;
@@ -174,9 +143,9 @@ public extension CXYTableNamespaceWrapper where T: UITableView {
         registerIfNeed(itemClass: cls)
         useDefaultDataSourceIfNeed()
 
-        let footerItem = CXYTableDataItem(itemClass: cls, data: data, delegate: delegate)
+        let footerItem = CXYCollectionDataItem(itemClass: cls, data: data, delegate: delegate)
         if let _ = table.m.sections.last?.footerItem {
-            let sectionItem = CXYTableSectionItem()
+            let sectionItem = CXYCollectionSectionItem()
             table.m.sections.append(sectionItem)
             sectionItem.footerItem = footerItem
         } else {
@@ -184,16 +153,15 @@ public extension CXYTableNamespaceWrapper where T: UITableView {
         }
     }
     
-    func didSelectItem(didSelect: @escaping DidSelectHandler) {
+    func didSelectItem(didSelect: @escaping DidSelectCollectionHandler) {
         table.defaultDataSource?.didSelect = didSelect
     }
 }
- 
 
 /**
  *  插入item
  */
-public extension CXYTableNamespaceWrapper where T: UITableView {
+public extension CXYTableNamespaceWrapper where T: UICollectionView {
     func insertHeaderItem(headerClass cls: AnyClass, data: Any?, section: Int) {
         insertHeaderItem(headerClass: cls, data: data, delegate: nil, section: section)
     }
@@ -206,12 +174,12 @@ public extension CXYTableNamespaceWrapper where T: UITableView {
         registerIfNeed(itemClass: cls)
         useDefaultDataSourceIfNeed()
         
-        let headerItem = CXYTableDataItem(itemClass: cls, data: data, delegate: delegate)
+        let headerItem = CXYCollectionDataItem(itemClass: cls, data: data, delegate: delegate)
 
         if let sec = sectionItem(section: section), sec.headerItem==nil {
             sec.headerItem = headerItem
         } else {
-            let sectionItem = CXYTableSectionItem()
+            let sectionItem = CXYCollectionSectionItem()
             sectionItem.headerItem = headerItem
             table.m.sections.insert(sectionItem, at: section)
         }
@@ -240,7 +208,7 @@ public extension CXYTableNamespaceWrapper where T: UITableView {
         useDefaultDataSourceIfNeed()
         
         let items = dataList.map {
-            CXYTableDataItem(itemClass: cls, data: $0, delegate: delegate)
+            CXYCollectionDataItem(itemClass: cls, data: $0, delegate: delegate)
         }
         
         let sectionItem = sectionItem(section: indexPath.section)
@@ -251,7 +219,7 @@ public extension CXYTableNamespaceWrapper where T: UITableView {
             }
             sec.cellItems.insert(contentsOf: items, at: indexPath.row)
         } else if table.m.sections.count >= indexPath.section {
-            let sectionItem = CXYTableSectionItem()
+            let sectionItem = CXYCollectionSectionItem()
             sectionItem.cellItems = items
             table.m.sections.insert(sectionItem, at: indexPath.section)
         }
@@ -271,12 +239,12 @@ public extension CXYTableNamespaceWrapper where T: UITableView {
         registerIfNeed(itemClass: cls)
         useDefaultDataSourceIfNeed()
 
-        let footerItem = CXYTableDataItem(itemClass: cls, data: data, delegate: delegate)
+        let footerItem = CXYCollectionDataItem(itemClass: cls, data: data, delegate: delegate)
         
         if let sec = sectionItem(section: section), sec.footerItem==nil {
             sec.footerItem = footerItem
         } else if table.m.sections.count >= section {
-            let sectionItem = CXYTableSectionItem()
+            let sectionItem = CXYCollectionSectionItem()
             sectionItem.footerItem = footerItem
             table.m.sections.insert(sectionItem, at: section)
         }
@@ -286,7 +254,7 @@ public extension CXYTableNamespaceWrapper where T: UITableView {
 /**
  *  删除item
  */
-public extension CXYTableNamespaceWrapper where T: UITableView {
+public extension CXYTableNamespaceWrapper where T: UICollectionView {
     
     func removeItems() {
         table.m.sections.removeAll()
@@ -297,26 +265,25 @@ public extension CXYTableNamespaceWrapper where T: UITableView {
     }
     
     func removeHeaderItem(section: Int) {
-        let sectionItem = table.t.sectionItem(section: section)
+        let sectionItem = table.c.sectionItem(section: section)
         sectionItem?.headerItem = nil
     }
     
     func removeCellItem(indexPath: IndexPath) {
-        let sectionItem = table.t.sectionItem(section: indexPath.section)
+        let sectionItem = table.c.sectionItem(section: indexPath.section)
         sectionItem?.cellItems.remove(at: indexPath.row)
     }
     
     func removeFooterItem(section: Int) {
-        let sectionItem = table.t.sectionItem(section: section)
+        let sectionItem = table.c.sectionItem(section: section)
         sectionItem?.footerItem = nil
     }
 }
 
-
 /**
  *  判空
  */
-public extension CXYTableNamespaceWrapper where T: UITableView {
+public extension CXYTableNamespaceWrapper where T: UICollectionView {
     var isEmpty: Bool {
         let items = sectionItems()
         if items.isEmpty {
@@ -331,7 +298,7 @@ public extension CXYTableNamespaceWrapper where T: UITableView {
         return true
     }
     
-    func isEmpty(sectionItem: CXYTableSectionItem) -> Bool {
+    func isEmpty(sectionItem: CXYCollectionSectionItem) -> Bool {
         if let _ = sectionItem.headerItem {
             return false
         }
@@ -344,22 +311,21 @@ public extension CXYTableNamespaceWrapper where T: UITableView {
         return true
     }
         
-    func isEmptyCellItem(forSectionItem sectionItem: CXYTableSectionItem) -> Bool {
+    func isEmptyCellItem(forSectionItem sectionItem: CXYCollectionSectionItem) -> Bool {
         return sectionItem.cellItems.isEmpty
     }
 }
 
-
 /**
  *  获取item
  */
-public extension CXYTableNamespaceWrapper where T: UITableView {
+public extension CXYTableNamespaceWrapper where T: UICollectionView {
     
-    func sectionItems() -> Array<CXYTableSectionItem> {
+    func sectionItems() -> Array<CXYCollectionSectionItem> {
         return table.m.sections
     }
     
-    func sectionItem(section: Int) -> CXYTableSectionItem? {
+    func sectionItem(section: Int) -> CXYCollectionSectionItem? {
         if 0 <= section && section < table.m.sections.count {
             return table.m.sections[section]
         }
@@ -390,11 +356,11 @@ public extension CXYTableNamespaceWrapper where T: UITableView {
         return sectionItem(section: section)?.footerItem?.itemClass
     }
     
-    func cellItems(section: Int) -> Array<CXYTableDataItem>? {
+    func cellItems(section: Int) -> Array<CXYCollectionDataItem>? {
         return sectionItem(section: section)?.cellItems
     }
     
-    func cellItem(forIndexPath indexPath: IndexPath) -> CXYTableDataItem? {
+    func cellItem(forIndexPath indexPath: IndexPath) -> CXYCollectionDataItem? {
         guard let cellItems = cellItems(section: indexPath.section) else {
             return nil
         }
@@ -445,12 +411,10 @@ public extension CXYTableNamespaceWrapper where T: UITableView {
     }
 }
 
-
-
 /**
  *  获取item数量
  */
-public extension CXYTableNamespaceWrapper where T: UITableView {
+public extension CXYTableNamespaceWrapper where T: UICollectionView {
     func numberOfSections() -> Int {
         return max(1, table.m.sections.count)
     }
@@ -463,81 +427,94 @@ public extension CXYTableNamespaceWrapper where T: UITableView {
     }
 }
 
-
-
 /**
- *  获取item高度
+ *  获取item尺寸
  */
-public extension CXYTableNamespaceWrapper where T: UITableView {
+public extension CXYTableNamespaceWrapper where T: UICollectionView {
     
-    func heightForItem(dataItem: CXYTableDataItem?) -> CGFloat {
-        if let cls = dataItem?.itemClass as? CXYTableItemProtocol.Type {
-            return cls.heightForItem(data: dataItem?.data)
+    func sizeForItem(dataItem: CXYCollectionDataItem?) -> CGSize {
+        if let cls = dataItem?.itemClass as? CXYCollectionItemProtocol.Type {
+            return cls.sizeForItem(data: dataItem?.data)
         }
-        return CGFloat.leastNormalMagnitude
+        return CGSize(width: 50, height: 50)
     }
     
-    func heightForCell(atIndexPath indexPath: IndexPath) -> CGFloat {
+    func sizeForCell(atIndexPath indexPath: IndexPath) -> CGSize {
         let cellItem = cellItem(forIndexPath: indexPath)
-        return heightForItem(dataItem: cellItem)
+        return sizeForItem(dataItem: cellItem)
     }
     
-    func heightForHeader(atSection section: Int) -> CGFloat {
-        let headerItem = sectionItem(section: section)?.headerItem
-        return heightForItem(dataItem: headerItem)
+    func sizeForHeader(atSection section: Int) -> CGSize {
+        guard let headerItem = sectionItem(section: section)?.headerItem,
+              let cls = headerItem.itemClass as? CXYCollectionHeaderFooterProtocol.Type else {
+            return .zero
+        }
+        return cls.sizeForHeaderFooter(data: headerItem.data)
     }
     
-    func heightForFooter(atSection section: Int) -> CGFloat {
-        let footerItem = sectionItem(section: section)?.footerItem
-        return heightForItem(dataItem: footerItem)
+    func sizeForFooter(atSection section: Int) -> CGSize {
+        guard let footerItem = sectionItem(section: section)?.footerItem,
+              let cls = footerItem.itemClass as? CXYCollectionHeaderFooterProtocol.Type else {
+            return .zero
+        }
+        return cls.sizeForHeaderFooter(data: footerItem.data)
     }
 }
- 
+
 /**
  *  获取重用item
  */
-public extension CXYTableNamespaceWrapper where T: UITableView {
-    func reusableCell(atIndexPath indexPath: IndexPath) -> UITableViewCell {
-        let cellItem = cellItem(forIndexPath:indexPath)
-        let cls: AnyClass? = cellItem?.itemClass
-        let cell = table.dequeueReusableCell(withIdentifier: String(describing: cls!), for: indexPath)
-        if let c = cell as? CXYTableItemProtocol {
-            c.configItem(data: cellItem?.data)
-            c.configItem(data: cellItem?.data, indexPath: indexPath, delegate: cellItem?.delegate)
+public extension CXYTableNamespaceWrapper where T: UICollectionView {
+    func reusableCell(atIndexPath indexPath: IndexPath) -> UICollectionViewCell {
+        guard let cellItem = cellItem(forIndexPath: indexPath) else {
+            assertionFailure("cellItem is nil at indexPath: \(indexPath)")
+            return UICollectionViewCell()
+        }
+        let itemClass: AnyClass = cellItem.itemClass
+        // Ensure class is registered before dequeuing
+        registerIfNeed(itemClass: itemClass)
+        let cell = table.dequeueReusableCell(withReuseIdentifier: String(describing: itemClass), for: indexPath)
+        if let c = cell as? CXYCollectionItemProtocol {
+            c.configItem(data: cellItem.data)
+            c.configItem(data: cellItem.data, indexPath: indexPath, delegate: cellItem.delegate)
         }
         return cell
     }
     
-    func reusableHeader(atSection section: Int) -> UITableViewHeaderFooterView? {
+    func reusableHeader(atSection section: Int) -> UICollectionReusableView? {
         let headerItem = sectionItem(section: section)?.headerItem
         let cls: AnyClass? = headerItem?.itemClass
         guard let itemClass = cls else {
-            return nil
+            return dequeueEmptySupplementary(kind: UICollectionView.elementKindSectionHeader, section: section)
         }
-        let header = table.dequeueReusableHeaderFooterView(withIdentifier: String(describing: itemClass))
-        if let h = header as? CXYTableItemProtocol {
-            h.configItem(data: headerItem?.data)
-            h.configItem(data: headerItem?.data, indexPath: IndexPath(row: 0, section: section), delegate: headerItem?.delegate)
+        // Ensure registration
+        registerIfNeed(itemClass: itemClass)
+        let header = table.dequeueReusableSupplementaryView(ofKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: String(describing: itemClass), for: IndexPath(item: 0, section: section))
+        if let h = header as? CXYCollectionHeaderFooterProtocol {
+            h.configHeaderFooter(data: headerItem?.data)
+            h.configHeaderFooter(data: headerItem?.data, indexPath: IndexPath(item: 0, section: section), delegate: headerItem?.delegate)
         }
         return header
     }
     
-    func reusableFooter(atSection section: Int) -> UITableViewHeaderFooterView? {
+    func reusableFooter(atSection section: Int) -> UICollectionReusableView? {
         let footerItem = sectionItem(section: section)?.footerItem
         let cls: AnyClass? = footerItem?.itemClass
         guard let itemClass = cls else {
-            return nil
+            return dequeueEmptySupplementary(kind: UICollectionView.elementKindSectionFooter, section: section)
         }
-        let footer = table.dequeueReusableHeaderFooterView(withIdentifier: String(describing: itemClass))
-        if let f = footer as? CXYTableItemProtocol {
-            f.configItem(data: footerItem?.data)
-            f.configItem(data: footerItem?.data, indexPath: IndexPath(row: 0, section: section),delegate: footerItem?.delegate)
+        // Ensure registration
+        registerIfNeed(itemClass: itemClass)
+        let footer = table.dequeueReusableSupplementaryView(ofKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: String(describing: itemClass), for: IndexPath(item: 0, section: section))
+        if let f = footer as? CXYCollectionHeaderFooterProtocol {
+            f.configHeaderFooter(data: footerItem?.data)
+            f.configHeaderFooter(data: footerItem?.data, indexPath: IndexPath(item: 0, section: section), delegate: footerItem?.delegate)
         }
         return footer
     }
 }
 
-public extension CXYTableNamespaceWrapper where T: UITableView  {
+public extension CXYTableNamespaceWrapper where T: UICollectionView  {
     var vc: UIViewController? {
         var parentResponder: UIResponder? = self.table
         while parentResponder != nil {
@@ -550,11 +527,10 @@ public extension CXYTableNamespaceWrapper where T: UITableView  {
     }
 }
 
-
 /**
  *  注册&代理，设置
  */
-private extension CXYTableNamespaceWrapper where T: UITableView  {
+private extension CXYTableNamespaceWrapper where T: UICollectionView  {
     func registerIfNeed(itemClass cls: AnyClass) {
         let name = String(describing: cls)
         guard let _ = table.registeredClasses[name] else {
@@ -569,20 +545,28 @@ private extension CXYTableNamespaceWrapper where T: UITableView  {
             useDefaultDataSource()
         }
     }
+    
+    func dequeueEmptySupplementary(kind: String, section: Int) -> UICollectionReusableView? {
+        let identifier = "CXYEmptySupplementaryView"
+        if table.registeredClasses[identifier] == nil {
+            table.register(UICollectionReusableView.self, forSupplementaryViewOfKind: kind, withReuseIdentifier: identifier)
+            table.registeredClasses[identifier] = UICollectionReusableView.self
+        }
+        return table.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: identifier, for: IndexPath(item: 0, section: section))
+    }
 }
-
 
 /**
  *  中转sections，避免数组添加元素频繁调用关联对象set方法
  */
-private class Middle {
-    var sections = [CXYTableSectionItem]()
+private class CollectionMiddle {
+    var sections = [CXYCollectionSectionItem]()
 }
 
 /**
  * 添加的关联属性
  */
-private extension UITableView {
+private extension UICollectionView {
     private struct AssociatedKeys {
         static var kRegisteredClassesKey: UInt8 = 0
         static var kSectionsKey: UInt8 = 0
@@ -604,10 +588,10 @@ private extension UITableView {
         }
     }
     
-    var m: Middle {
+    var m: CollectionMiddle {
         get {
-            guard let value = objc_getAssociatedObject(self, &AssociatedKeys.kMiddleKey) as? Middle else {
-                let defaultVaule = Middle()
+            guard let value = objc_getAssociatedObject(self, &AssociatedKeys.kMiddleKey) as? CollectionMiddle else {
+                let defaultVaule = CollectionMiddle()
                 objc_setAssociatedObject(self, &AssociatedKeys.kMiddleKey, defaultVaule, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
                 return defaultVaule
             }
@@ -615,13 +599,12 @@ private extension UITableView {
         }
     }
     
-    var defaultDataSource : CXYTableDataSource? {
+    var defaultDataSource : CXYCollectionDataSource? {
         get {
-            return objc_getAssociatedObject(self, &AssociatedKeys.kDataSourceKey) as? CXYTableDataSource
+            return objc_getAssociatedObject(self, &AssociatedKeys.kDataSourceKey) as? CXYCollectionDataSource
         }
         set {
             objc_setAssociatedObject(self, &AssociatedKeys.kDataSourceKey, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         }
     }
 }
-

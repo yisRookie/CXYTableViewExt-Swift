@@ -25,7 +25,14 @@ class CustomController: BaseTableController {
     func configTable() {
         self.tableView.t.makeConfig { make in
             make.addHeaderItem(headerClass: Header2.self, data: "Section0-Header")
+            make.addCellItem(cellClass: SwitchCell.self) { data, indexPath in
+                
+            }
+            
             make.addCellItems(cellClass: TextCell.self, dataList: Array(1...30))
+            
+            
+
         }
     }
 }

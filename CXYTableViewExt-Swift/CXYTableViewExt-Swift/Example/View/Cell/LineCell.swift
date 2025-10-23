@@ -13,7 +13,7 @@ class LineCell: UITableViewCell {
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         self.selectionStyle = .none
-        self.contentView.backgroundColor = .systemGroupedBackground
+        self.contentView.backgroundColor = .white
     }
     
     required init?(coder: NSCoder) {
@@ -22,6 +22,7 @@ class LineCell: UITableViewCell {
 }
 
 extension LineCell: CXYTableItemProtocol {
+    
     static func heightForItem(data: Any?) -> CGFloat {
         if let model = data as? LineModel {
             return model.height

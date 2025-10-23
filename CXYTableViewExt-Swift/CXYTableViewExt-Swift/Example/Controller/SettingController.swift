@@ -12,6 +12,7 @@ class SettingController: UIViewController {
     @IBOutlet weak var tableView: UITableView!
     
     var noti = SettingModel(title: "Mute Notification(消息免打扰)", isOn: true)
+    
     var top = SettingModel(title: "Sticky on Top(置顶)", isOn: false)
     
     override func viewDidLoad() {
@@ -27,14 +28,27 @@ class SettingController: UIViewController {
     
     
     func configTable() {
+        
         self.tableView.t.makeConfig { make in
             
             make.addCellItem(cellClass: LineCell.self)
-            make.addCellItem(cellClass: ArrowCell.self, data: SettingModel(title: "BaseTableController", detail: "基类实现代理")) { [weak self] data, indexPath in
+            
+            make.addCellItem(cellClass: ArrowCell.self,
+                             data: SettingModel(title: "BaseTableController",
+                                                detail: "基类实现代理")) {
+                [weak self] data, indexPath in
+                self?.navigationController?.pushViewController(BoardModelsViewController(), animated: true)
+            }
+            
+            make.addCellItem(cellClass: ArrowCell.self,
+                             data: SettingModel(title: "SubTableController",
+                                                detail: "基类实现代理")) {
+                [weak self] data, indexPath in
                 self?.navigationController?.pushViewController(SubTableController(), animated: true)
             }
             
-            make.addCellItem(cellClass: ArrowCell.self, data: SettingModel(title: "Refresh&LoadMore", detail: "下拉刷新&加载更多")) { [weak self] data, indexPath in
+            make.addCellItem(cellClass: ArrowCell.self,
+                             data: SettingModel(title: "Refresh&LoadMore", detail: "下拉刷新&加载更多")) { [weak self] data, indexPath in
                 self?.navigationController?.pushViewController(RefreshController(), animated: true)
             }
             
@@ -50,13 +64,28 @@ class SettingController: UIViewController {
                 self?.performSegue(withIdentifier: "EditableController", sender: nil)
             }
             
+            
+            
             make.addCellItem(cellClass: LineCell.self)
+
             make.addCellItem(cellClass: SwitchCell.self, data: self.noti, delegate: self)
+
             make.addCellItem(cellClass: SwitchCell.self, data: self.top, delegate: self)
              
             make.addCellItem(cellClass: LineCell.self, data: LineModel(height: 20))
-            make.addCellItem(cellClass: ExitCell.self, data: "Exit(退出)") { data, indexPath in
+
+            make.addCellItem(cellClass: ExitCell.self, data: "Exit(退出)Exit(退出)Exit(退出)Exit(退出)Exit(退出)Exit(退出)") { data, indexPath in
                 print("Exit Clicked")
+                
+//                self.performSegue(withIdentifier: "CollectionViewController", sender: nil)
+                self.navigationController?.pushViewController(CollectionViewController(), animated: true)
+            }
+            
+            make.addCellItem(cellClass: ExitCell.self, data: "Exit(退出)Exit(退出)Exit(退出)Exit(退出)Exit(退出)Exit(退出)") { data, indexPath in
+                print("Exit Clicked")
+                
+//                self.performSegue(withIdentifier: "CollectionViewController", sender: nil)
+                self.navigationController?.pushViewController(CollectionWithHeaderFooterController(), animated: true)
             }
         }
         

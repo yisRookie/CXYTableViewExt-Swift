@@ -1,0 +1,18 @@
+PODS:
+  - StackUI (0.0.17):
+    - StackUI/Core (= 0.0.17)
+  - StackUI/Core (0.0.17)
+
+DEPENDENCIES:
+  - StackUI
+
+SPEC REPOS:
+  trunk:
+    - StackUI
+
+SPEC CHECKSUMS:
+  StackUI: 1671be642841dcfb8b79b7c1bbfc678373715b00
+
+PODFILE CHECKSUM: 2cb253d8f10868b0f2dbe351531eb356b17ab26f
+
+COCOAPODS: 1.15.2

@@ -16,7 +16,7 @@ extension TextCell: CXYTableItemProtocol {
     
     func configItem(data: Any?) {
         if let model = data as? Int {
-            self.title.text = "\(model)"
+            self.title.text = "\(model) CXYTableItemProtocol CXYTableItemProtocol CXYTableItemProtocol CXYTableItemProtocol CXYTableItemProtocol CXYTableItemProtocol"
         }
     }
 }
