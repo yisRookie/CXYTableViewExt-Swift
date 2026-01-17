@@ -431,19 +431,7 @@ public extension CXYTableNamespaceWrapper where T: UICollectionView {
  *  获取item尺寸
  */
 public extension CXYTableNamespaceWrapper where T: UICollectionView {
-    
-    func sizeForItem(dataItem: CXYCollectionDataItem?) -> CGSize {
-        if let cls = dataItem?.itemClass as? CXYCollectionItemProtocol.Type {
-            return cls.sizeForItem(data: dataItem?.data)
-        }
-        return CGSize(width: 50, height: 50)
-    }
-    
-    func sizeForCell(atIndexPath indexPath: IndexPath) -> CGSize {
-        let cellItem = cellItem(forIndexPath: indexPath)
-        return sizeForItem(dataItem: cellItem)
-    }
-    
+        
     func sizeForHeader(atSection section: Int) -> CGSize {
         guard let headerItem = sectionItem(section: section)?.headerItem,
               let cls = headerItem.itemClass as? CXYCollectionHeaderFooterProtocol.Type else {
